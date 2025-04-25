@@ -1,5 +1,5 @@
 variable "cluster_name" {
-    default = "cluster-2"
+    default = "cluster-1"
   
 }
 variable "region" {
