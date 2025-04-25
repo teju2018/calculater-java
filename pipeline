@@ -1,0 +1,93 @@
+pipeline {
+    agent any
+    environment {
+        ZONE = "us-central1-c"
+        IMAGE_NAME = "sam"
+       
+        CLUSTER_NAME = "cluster-2"
+        GOOGLE_APPLICATION_CREDENTIALS = credentials('gcp')
+        DEPLOY_YAML = "frontend.yaml"
+    }
+    stages {
+        stage('docker login') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-hub', 
+                                                  usernameVariable: 'DOCKER_USER', 
+                                                  passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    '''
+                }
+            }
+        }
+        stage('gcp login') {
+            steps {
+                sh '''
+                gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+                '''
+            }
+        }
+        stage("build image") {
+            steps {
+                sh '''
+                docker build -t "$IMAGE_NAME" .
+                docker tag "$IMAGE_NAME" xyz673/$IMAGE_NAME:$BUILD_NUMBER
+                '''
+            }
+        }
+        stage('docker push') {
+            steps {
+                sh '''
+                docker push xyz673/$IMAGE_NAME:$BUILD_NUMBER
+                '''
+            }
+        }
+        stage('Update Deployment File') {
+            steps {
+                script {
+                    echo 'Updating deployment YAML with the latest Docker image...'
+                    sh """
+                    sed -i 's|image: .*|image: xyz673/${IMAGE_NAME}:${BUILD_NUMBER}|' ${DEPLOY_YAML}
+                    """
+                }
+            }
+        }
+       
+        stage('terraform apply') {
+            steps {
+                sh ''' 
+                terraform init
+                terraform plan
+                terraform apply --auto-approve
+                '''
+            }
+        }
+        stage("wait for connection") {
+            steps {
+                retry(3) {
+                    sh '''  
+                    sleep 10
+                    gcloud container clusters get-credentials $CLUSTER_NAME --zone $ZONE --project my-project-123-453312
+                    '''
+                }
+            }
+        }
+        
+        stage("deploy application ") {
+            steps {
+                sh ''' 
+
+                kubectl apply -f frontend.yaml
+                ''' 
+            }
+        }
+        stage("get svc") {
+            steps {
+                sh ''' 
+                sleep 40
+                kubectl get svc
+                '''
+            }
+        }
+    }
+}
