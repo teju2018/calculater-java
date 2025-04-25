@@ -2,11 +2,11 @@ pipeline {
     agent any
     environment {
         ZONE = "us-central1-c"
-        IMAGE_NAME = "sam"
+        IMAGE_NAME = "sample-calculater"
        
         CLUSTER_NAME = "cluster-2"
         GOOGLE_APPLICATION_CREDENTIALS = credentials('gcp')
-        DEPLOY_YAML = "frontend.yaml"
+        DEPLOY_YAML = "calculater.yaml"
     }
     stages {
         stage('docker login') {
@@ -77,7 +77,7 @@ pipeline {
             steps {
                 sh ''' 
 
-                kubectl apply -f frontend.yaml
+                kubectl apply -f calculater.yaml
                 ''' 
             }
         }
