@@ -18,7 +18,7 @@ spec:
         - name: app1
           image: xyz673/sample1:latest
           ports:
-            - containerPort: 80  # Fixed key name
+            - containerPort: 8081  # Fixed key name
 
 ---
 
@@ -33,5 +33,5 @@ spec:
     app: frontend
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 80
+      port: 8081
+      targetPort: 8081
