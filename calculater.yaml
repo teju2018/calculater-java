@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: app1
-          image: xyz673/sample1:latest
+          image: xyz673/sample-calculater:latest
           ports:
             - containerPort: 8081  # Fixed key name
 
